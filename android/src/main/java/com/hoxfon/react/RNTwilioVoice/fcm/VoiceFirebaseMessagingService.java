@@ -36,6 +36,7 @@ import com.hoxfon.react.RNTwilioVoice.SoundPoolManager;
 public class VoiceFirebaseMessagingService extends FirebaseMessagingService {
 
     private CallNotificationManager callNotificationManager;
+    private ReactInstanceManager mReactInstanceManager;
 
     @Override
     public void onCreate() {
@@ -74,7 +75,6 @@ public class VoiceFirebaseMessagingService extends FirebaseMessagingService {
                     handler.post(new Runnable() {
                         public void run() {
                             // Construct and load our normal React JS code bundle
-                            ReactInstanceManager mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
                             ReactContext context = mReactInstanceManager.getCurrentReactContext();
                             // If it's constructed, send a notification
                             if (context != null) {
