@@ -69,25 +69,25 @@ RCT_EXPORT_METHOD(initWithAccessTokenUrl:(NSString *)tokenUrl) {
 }
 
 RCT_EXPORT_METHOD(configureCallKit: (NSDictionary *)params) {
-  if (self.callKitCallController == nil) {
-    _settings = [[NSMutableDictionary alloc] initWithDictionary:params];
-    CXProviderConfiguration *configuration = [[CXProviderConfiguration alloc] initWithLocalizedName:params[@"appName"]];
-    configuration.maximumCallGroups = 1;
-    configuration.maximumCallsPerCallGroup = 1;
-    if (_settings[@"imageName"]) {
-      configuration.iconTemplateImageData = UIImagePNGRepresentation([UIImage imageNamed:_settings[@"imageName"]]);
-    }
-    if (_settings[@"ringtoneSound"]) {
-      configuration.ringtoneSound = _settings[@"ringtoneSound"];
-    }
-
-    _callKitProvider = [[CXProvider alloc] initWithConfiguration:configuration];
-    [_callKitProvider setDelegate:self queue:nil];
-
-    NSLog(@"CallKit Initialized");
-
-    self.callKitCallController = [[CXCallController alloc] init];
+  // if (self.callKitCallController == nil) {
+  _settings = [[NSMutableDictionary alloc] initWithDictionary:params];
+  CXProviderConfiguration *configuration = [[CXProviderConfiguration alloc] initWithLocalizedName:params[@"appName"]];
+  configuration.maximumCallGroups = 1;
+  configuration.maximumCallsPerCallGroup = 1;
+  if (_settings[@"imageName"]) {
+    configuration.iconTemplateImageData = UIImagePNGRepresentation([UIImage imageNamed:_settings[@"imageName"]]);
   }
+  if (_settings[@"ringtoneSound"]) {
+    configuration.ringtoneSound = _settings[@"ringtoneSound"];
+  }
+
+  _callKitProvider = [[CXProvider alloc] initWithConfiguration:configuration];
+  [_callKitProvider setDelegate:self queue:nil];
+
+  NSLog(@"CallKit Initialized");
+
+  self.callKitCallController = [[CXCallController alloc] init];
+  // }
 }
 
 RCT_EXPORT_METHOD(connect: (NSDictionary *)params) {
@@ -260,9 +260,14 @@ RCT_REMAP_METHOD(getActiveCall,
 
 - (void)pushRegistry:(PKPushRegistry *)registry didReceiveIncomingPushWithPayload:(PKPushPayload *)payload forType:(NSString *)type {
   NSLog(@"pushRegistry:didReceiveIncomingPushWithPayload:forType");
+  
+  NSMutableDictionary *updatedCallPayload = [payload.dictionaryPayload mutableCopy];
+  NSString *callFrom = payload.dictionaryPayload[@"twi_from"];
+  NSArray *callFromArray = [callFrom componentsSeparatedByString:@":"];
+  [updatedCallPayload setObject:callFromArray[1] forKey:@"twi_from"];
 
   if ([type isEqualToString:PKPushTypeVoIP]) {
-    [TwilioVoice handleNotification:payload.dictionaryPayload
+    [TwilioVoice handleNotification:updatedCallPayload
                                             delegate:self];
   }
 }
