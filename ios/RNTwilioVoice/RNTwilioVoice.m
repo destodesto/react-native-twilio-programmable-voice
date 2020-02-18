@@ -3,7 +3,9 @@
 //
 
 #import "RNTwilioVoice.h"
+#import "AppDelegate.h"
 #import <React/RCTLog.h>
+
 
 @import AVFoundation;
 @import PushKit;
@@ -69,25 +71,25 @@ RCT_EXPORT_METHOD(initWithAccessTokenUrl:(NSString *)tokenUrl) {
 }
 
 RCT_EXPORT_METHOD(configureCallKit: (NSDictionary *)params) {
-  // if (self.callKitCallController == nil) {
-  _settings = [[NSMutableDictionary alloc] initWithDictionary:params];
-  CXProviderConfiguration *configuration = [[CXProviderConfiguration alloc] initWithLocalizedName:params[@"appName"]];
-  configuration.maximumCallGroups = 1;
-  configuration.maximumCallsPerCallGroup = 1;
-  if (_settings[@"imageName"]) {
-    configuration.iconTemplateImageData = UIImagePNGRepresentation([UIImage imageNamed:_settings[@"imageName"]]);
-  }
-  if (_settings[@"ringtoneSound"]) {
-    configuration.ringtoneSound = _settings[@"ringtoneSound"];
-  }
+//  if (self.callKitCallController == nil) {
+    _settings = [[NSMutableDictionary alloc] initWithDictionary:params];
+    CXProviderConfiguration *configuration = [[CXProviderConfiguration alloc] initWithLocalizedName:params[@"appName"]];
+    configuration.maximumCallGroups = 1;
+    configuration.maximumCallsPerCallGroup = 1;
+    if (_settings[@"imageName"]) {
+      configuration.iconTemplateImageData = UIImagePNGRepresentation([UIImage imageNamed:_settings[@"imageName"]]);
+    }
+    if (_settings[@"ringtoneSound"]) {
+      configuration.ringtoneSound = _settings[@"ringtoneSound"];
+    }
 
-  _callKitProvider = [[CXProvider alloc] initWithConfiguration:configuration];
-  [_callKitProvider setDelegate:self queue:nil];
+    _callKitProvider = [[CXProvider alloc] initWithConfiguration:configuration];
+    [_callKitProvider setDelegate:self queue:nil];
 
-  NSLog(@"CallKit Initialized");
+    NSLog(@"CallKit Initialized");
 
-  self.callKitCallController = [[CXCallController alloc] init];
-  // }
+    self.callKitCallController = [[CXCallController alloc] init];
+//  }
 }
 
 RCT_EXPORT_METHOD(connect: (NSDictionary *)params) {
@@ -259,17 +261,22 @@ RCT_REMAP_METHOD(getActiveCall,
 }
 
 - (void)pushRegistry:(PKPushRegistry *)registry didReceiveIncomingPushWithPayload:(PKPushPayload *)payload forType:(NSString *)type {
-  NSLog(@"pushRegistry:didReceiveIncomingPushWithPayload:forType");
-  
-  NSMutableDictionary *updatedCallPayload = [payload.dictionaryPayload mutableCopy];
-  NSString *callFrom = payload.dictionaryPayload[@"twi_from"];
-  NSArray *callFromArray = [callFrom componentsSeparatedByString:@":"];
-  [updatedCallPayload setObject:callFromArray[1] forKey:@"twi_from"];
+    NSLog(@"pushRegistry:didReceiveIncomingPushWithPayload:forType");
+    NSLog(@"payload : %@", payload.dictionaryPayload);
 
-  if ([type isEqualToString:PKPushTypeVoIP]) {
-    [TwilioVoice handleNotification:updatedCallPayload
-                                            delegate:self];
-  }
+    if ([type isEqualToString:PKPushTypeVoIP]) {
+        if ([payload.dictionaryPayload objectForKey:@"twi_from"] != nil) {
+            NSMutableDictionary *updatedCallPayload = [payload.dictionaryPayload mutableCopy];
+            NSString *callFrom = payload.dictionaryPayload[@"twi_from"];
+            NSArray *callFromArray = [callFrom componentsSeparatedByString:@":"];
+            [updatedCallPayload setObject:callFromArray[1] forKey:@"twi_from"];
+              
+            [TwilioVoice handleNotification:updatedCallPayload
+                                                    delegate:self];
+        } else {
+            [AppDelegate didReceiveIncomingPushWithPayload:payload forType:(NSString *)type];
+        }
+    }
 }
 
 #pragma mark - TVONotificationDelegate
